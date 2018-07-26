@@ -77,8 +77,9 @@ function rrmdir($src) {
 
 logs('Complete');
 echo '</pre>';
-
-
+if (isset($_GET['d'])){
+	@unlink( FILE );
+}
 
 /**
  * The Unzipper extracts .zip or .rar archives and .gz files on webservers.
