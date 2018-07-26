@@ -1,60 +1,63 @@
 <?php
 /**
- * User: CrazyBoy49z
+ * @author  Yura Finiv as CrazyBoy49z
+ * @license GNU GPL v3
+ * @version 0.0.2
  * Date: 26.07.2018
- * Time: 17:32
+ * Time: 23:32
  */
-$timestart = microtime(TRUE);
-define('VERSION', '0.0.1');
-$name = "modx.zip";
-$urldownload = "https://github.com/modxcms/revolution/archive/2.6.x.zip";
-$unpackFold = './';
-$foldOld = 'revolution-2.6.x';
-
 echo '<pre>';
 print_r('ModX install by CrazyBoy49z<br/>');
-file_put_contents($name,
-	file_get_contents($urldownload)
-);
-$timeend = microtime(TRUE);
-$time = round($timeend - $timestart, 4);
-print_r($time. ': Download ModX from GitHub<br/>');
-
-/**
- * The Unzipper extracts .zip or .rar archives and .gz files on webservers.
- * It's handy if you do not have shell access. E.g. if you want to upload a lot
- * of files (php framework or image collection) as an archive to save time.
- * As of version 0.1.0 it also supports creating archives.
- *
- * @author  Andreas Tasch, at[tec], attec.at
- * @license GNU GPL v3
- * @package attec.toolbox
- * @version 0.1.1
- */
-
+$timestart = microtime(TRUE);
+if (!isset($_GET['v'])){
+	die('Version modx is null download.php?v=2.6.5');
+}
+$ver = explode('.', $_GET['v']);
+$ver = (int)$ver[0].'.'.(int)$ver[1].'.'.(int)$ver[2];
+$name = "modx-{$ver}-pl";
+unset($ver);
+$namezip = "{$name}.zip";
+$urldownload = "https://modx.com/download/direct?id={$namezip}";
+$unpackFold = './';
 $GLOBALS['status'] = array();
-$unzipper = new Unzipper;
-if (file_exists($name)){
-	$unzipper->prepareExtraction($name, $unpackFold);
-}else{
+
+function logs($log){
+	global $timestart;
 	$timeend = microtime(TRUE);
 	$time = round($timeend - $timestart, 4);
-	die($time. ": File {$name} not exist<br/>");
-}
-$timeend = microtime(TRUE);
-$time = round($timeend - $timestart, 4);
-print_r($time. ": Unpack {$name}<br/>");
-print_r($GLOBALS['status']);
-
-$scanned_directory = array_diff(scandir($foldOld), array('..', '.','_build','.editorconfig','.gitignore','.travis.yml','README.md','LICENSE.md','.github'));
-foreach ($scanned_directory as $value){
-	rename(dirname($foldOld).'/'.$foldOld.'/'.$value, './'.$value);
+	print_r("{$time} : {$log} <br/>");
 }
 
-$timeend = microtime(TRUE);
-$time = round($timeend - $timestart, 4);
-print_r($time. ': Move ModX folders<br/>');
-
+logs("Get file $namezip");
+$file = file_get_contents($urldownload);
+unset($urldownload);
+if (empty($file)){
+	logs("Bad version modx");
+	return;
+}
+logs("Download ModX");
+file_put_contents($namezip, $file);
+unset($file);
+logs("Unzip {$namezip}");
+$unzipper = new Unzipper;
+if (file_exists($namezip)){
+	$unzipper->prepareExtraction($namezip, $unpackFold);
+	logs("Unpack {$namezip}");
+	logs($GLOBALS['status']);
+	unset($GLOBALS['status']);
+	logs('Move ModX folders');
+	$scanned_directory = array_diff(scandir($name), array('..', '.'));
+	foreach ($scanned_directory as $value){
+		rename(dirname($name).'/'.$name.'/'.$value, './'.$value);
+	}
+	log("Delete {$name} folders");
+	rrmdir($name);
+	unlink($namezip);
+}else{
+	logs("File {$namezip} not exist");
+	die();
+}
+unset($unzipper);
 function rrmdir($src) {
 	$dir = opendir($src);
 	while(false !== ( $file = readdir($dir)) ) {
@@ -71,20 +74,24 @@ function rrmdir($src) {
 	closedir($dir);
 	rmdir($src);
 }
-$timeend = microtime(TRUE);
-$time = round($timeend - $timestart, 4);
-print_r($time. ': Delete '.$foldOld.' folders<br/>');
-rrmdir($foldOld);
 
-$timeend = microtime(TRUE);
-$time = round($timeend - $timestart, 4);
-print_r($time. ': Delete '.$name.'<br/>');
-unlink($name);
-
-$timeend = microtime(TRUE);
-$time = round($timeend - $timestart, 4);
-print_r($time. ': Complete<br/>');
+logs('Complete');
 echo '</pre>';
+
+
+
+/**
+ * The Unzipper extracts .zip or .rar archives and .gz files on webservers.
+ * It's handy if you do not have shell access. E.g. if you want to upload a lot
+ * of files (php framework or image collection) as an archive to save time.
+ * As of version 0.1.0 it also supports creating archives.
+ *
+ * @author  Andreas Tasch, at[tec], attec.at
+ * @license GNU GPL v3
+ * @package attec.toolbox
+ * @version 0.1.1
+ */
+
 /**
  * Class Unzipper
  */
